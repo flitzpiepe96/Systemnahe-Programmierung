@@ -1,0 +1,590 @@
+lcd                                                                                                                     PAGE 1
+  00A0                   1     LCD_data equ P2                 ;LCD Data port
+  00A7                   2     LCD_D7   equ P2.7               ;LCD D7/Busy Flag
+  0090                   3     LCD_rs   equ P1.0               ;LCD Register Select
+  0091                   4     LCD_rw   equ P1.1               ;LCD Read/Write
+  0092                   5     LCD_en   equ P1.2               ;LCD Enable
+                         6
+  0020                   7     P1_DEATH equ 0x20
+  0021                   8     P2_DEATH equ 0x21
+  000B                   9     STRING_POS_P1_DEATH equ 0bh
+  0013                  10     STRING_POS_P2_DEATH equ 13h
+                        11
+                        12
+                        13     LCD_init:
+0000 319A               14             acall LCD_busy          ;Wait for LCD to process the command
+                        15
+                        16 +1          LCD_command #38h        ;Function set: 2 Line, 8-bit, 5x7 dots
+0002 75A038             17 +1                  mov     lcd_data , #38h
+0005 C290               18 +1                  clr     lcd_rs
+0007 C291               19 +1                  clr     lcd_rw
+0009 D292               20 +1                  setb    lcd_en
+000B C292               21 +1                  clr     lcd_en
+000D 319A               22 +1                  acall   lcd_busy
+                        23 +1          LCD_command #0ch        ;Display on, Curson blinking command
+000F 75A00C             24 +1                  mov     lcd_data , #0ch
+0012 C290               25 +1                  clr     lcd_rs
+0014 C291               26 +1                  clr     lcd_rw
+0016 D292               27 +1                  setb    lcd_en
+0018 C292               28 +1                  clr     lcd_en
+001A 319A               29 +1                  acall   lcd_busy
+                        30 +1          LCD_command #01H        ;Clear LCD
+001C 75A001             31 +1                  mov     lcd_data , #01H
+001F C290               32 +1                  clr     lcd_rs
+0021 C291               33 +1                  clr     lcd_rw
+0023 D292               34 +1                  setb    lcd_en
+0025 C292               35 +1                  clr     lcd_en
+0027 319A               36 +1                  acall   lcd_busy
+                        37 +1          LCD_command #06H        ;Entry mode, auto increment with no shift
+0029 75A006             38 +1                  mov     lcd_data , #06H
+002C C290               39 +1                  clr     lcd_rs
+002E C291               40 +1                  clr     lcd_rw
+0030 D292               41 +1                  setb    lcd_en
+0032 C292               42 +1                  clr     lcd_en
+0034 319A               43 +1                  acall   lcd_busy
+                        44
+                        45 +1          LCD_setCursor #01h, #00h
+0036 7401               46 +1                  mov     a , #01h
+0038 B40105             47 +1                  cjne    a , #01h , lcd_setcursor_1__line2
+003B 7480               48 +1                  mov     a , #80h
+003D 020042             49 +1                  jmp     lcd_setcursor_1__end
+                        50 +1                  lcd_setcursor_1__line2:
+0040 74C0               51 +1                  mov     a , #0c0h
+                        52 +1                  lcd_setcursor_1__end:
+0042 2400               53 +1                  add     a , #00h
+                        54 +2                  LCD_command     a
+0044 F5A0               55 +2                  mov     lcd_data , a
+0046 C290               56 +2                  clr     lcd_rs
+0048 C291               57 +2                  clr     lcd_rw
+004A D292               58 +2                  setb    lcd_en
+004C C292               59 +2                  clr     lcd_en
+004E 319A               60 +2                  acall   lcd_busy
+                        61 +1          LCD_sendString BEGIN
+0050 7582AC             62 +1                  mov     dpl , #low ( BEGIN )
+0053 758301             63 +1                  mov     dph , #high ( BEGIN )
+                        64 +1                  lcd_sendstring_1__start:
+0056 E4                 65 +1                  clr     a
+0057 93                 66 +1                  movc    a , @a+dptr
+0058 600F               67 +1                  jz      lcd_sendstring_1__exit
+                        68 +2                  LCD_sendChar    a
+005A F5A0               69 +2                  mov     lcd_data , a
+005C D290               70 +2                  setb    lcd_rs
+005E C291               71 +2                  clr     lcd_rw
+0060 D292               72 +2                  setb    lcd_en
+0062 C292               73 +2                  clr     lcd_en
+0064 319A               74 +2                  acall   lcd_busy
+0066 A3                 75 +1                  inc     dptr
+0067 80ED               76 +1                  sjmp    lcd_sendstring_1__start
+                        77 +1                  lcd_sendstring_1__exit:
+                        78
+                        79 +1          LCD_setCursor #02h, #00h
+0069 7402               80 +1                  mov     a , #02h
+006B B40105             81 +1                  cjne    a , #01h , lcd_setcursor_2__line2
+006E 7480               82 +1                  mov     a , #80h
+0070 020075             83 +1                  jmp     lcd_setcursor_2__end
+                        84 +1                  lcd_setcursor_2__line2:
+0073 74C0               85 +1                  mov     a , #0c0h
+                        86 +1                  lcd_setcursor_2__end:
+0075 2400               87 +1                  add     a , #00h
+                        88 +2                  LCD_command     a
+0077 F5A0               89 +2                  mov     lcd_data , a
+0079 C290               90 +2                  clr     lcd_rs
+007B C291               91 +2                  clr     lcd_rw
+007D D292               92 +2                  setb    lcd_en
+007F C292               93 +2                  clr     lcd_en
+0081 319A               94 +2                  acall   lcd_busy
+                        95 +1          LCD_sendString DEATH
+0083 7582C1             96 +1                  mov     dpl , #low ( DEATH )
+0086 758301             97 +1                  mov     dph , #high ( DEATH )
+                        98 +1                  lcd_sendstring_2__start:
+0089 E4                 99 +1                  clr     a
+008A 93                100 +1                  movc    a , @a+dptr
+008B 600F              101 +1                  jz      lcd_sendstring_2__exit
+                       102 +2                  LCD_sendChar    a
+008D F5A0              103 +2                  mov     lcd_data , a
+008F D290              104 +2                  setb    lcd_rs
+0091 C291              105 +2                  clr     lcd_rw
+0093 D292              106 +2                  setb    lcd_en
+0095 C292              107 +2                  clr     lcd_en
+0097 319A              108 +2                  acall   lcd_busy
+0099 A3                109 +1                  inc     dptr
+009A 80ED              110 +1                  sjmp    lcd_sendstring_2__start
+                       111 +1                  lcd_sendstring_2__exit:
+                       112
+                       113 +1          DEATHCOUNT #01h
+009C 7401              114 +1                  mov     a , #01h
+009E B40123            115 +1                  cjne    a , #01 , deathcount_1__player2
+                       116 +2                  LCD_setCursor   #02h , #string_pos_p1_death
+00A1 7402              117 +2                  mov     a , #02h
+00A3 B40105            118 +2                  cjne    a , #01h , lcd_setcursor_3__line2
+00A6 7480              119 +2                  mov     a , #80h
+00A8 0200AD            120 +2                  jmp     lcd_setcursor_3__end
+                       121 +2                  lcd_setcursor_3__line2:
+00AB 74C0              122 +2                  mov     a , #0c0h
+                       123 +2                  lcd_setcursor_3__end:
+00AD 240B              124 +2                  add     a , #string_pos_p1_death
+                       125 +3                  LCD_command     a
+00AF F5A0              126 +3                  mov     lcd_data , a
+00B1 C290              127 +3                  clr     lcd_rs
+00B3 C291              128 +3                  clr     lcd_rw
+00B5 D292              129 +3                  setb    lcd_en
+00B7 C292              130 +3                  clr     lcd_en
+00B9 319A              131 +3                  acall   lcd_busy
+00BB 0520              132 +1                  inc     p1_death
+00BD E520              133 +1                  mov     a , p1_death
+00BF 2430              134 +1                  add     a , #30h
+00C1 0200E4            135 +1                  jmp     deathcount_1__end
+                       136 +1                  deathcount_1__player2:
+                       137 +2                  LCD_setCursor   #02h , #string_pos_p2_death
+00C4 7402              138 +2                  mov     a , #02h
+00C6 B40105            139 +2                  cjne    a , #01h , lcd_setcursor_4__line2
+00C9 7480              140 +2                  mov     a , #80h
+00CB 0200D0            141 +2                  jmp     lcd_setcursor_4__end
+                       142 +2                  lcd_setcursor_4__line2:
+00CE 74C0              143 +2                  mov     a , #0c0h
+                       144 +2                  lcd_setcursor_4__end:
+00D0 2413              145 +2                  add     a , #string_pos_p2_death
+                       146 +3                  LCD_command     a
+00D2 F5A0              147 +3                  mov     lcd_data , a
+00D4 C290              148 +3                  clr     lcd_rs
+00D6 C291              149 +3                  clr     lcd_rw
+00D8 D292              150 +3                  setb    lcd_en
+00DA C292              151 +3                  clr     lcd_en
+00DC 319A              152 +3                  acall   lcd_busy
+00DE 0521              153 +1                  inc     p2_death
+00E0 E521              154 +1                  mov     a , p2_death
+00E2 2430              155 +1                  add     a , #30h
+                       156 +1                  deathcount_1__end:
+                       157 +2                  LCD_sendChar    a
+00E4 F5A0              158 +2                  mov     lcd_data , a
+00E6 D290              159 +2                  setb    lcd_rs
+00E8 C291              160 +2                  clr     lcd_rw
+00EA D292              161 +2                  setb    lcd_en
+00EC C292              162 +2                  clr     lcd_en
+00EE 319A              163 +2                  acall   lcd_busy
+                       164 +1          DEATHCOUNT #01h
+00F0 7401              165 +1                  mov     a , #01h
+00F2 B40123            166 +1                  cjne    a , #01 , deathcount_2__player2
+                       167 +2                  LCD_setCursor   #02h , #string_pos_p1_death
+00F5 7402              168 +2                  mov     a , #02h
+00F7 B40105            169 +2                  cjne    a , #01h , lcd_setcursor_5__line2
+00FA 7480              170 +2                  mov     a , #80h
+00FC 020101            171 +2                  jmp     lcd_setcursor_5__end
+                       172 +2                  lcd_setcursor_5__line2:
+00FF 74C0              173 +2                  mov     a , #0c0h
+                       174 +2                  lcd_setcursor_5__end:
+0101 240B              175 +2                  add     a , #string_pos_p1_death
+                       176 +3                  LCD_command     a
+0103 F5A0              177 +3                  mov     lcd_data , a
+0105 C290              178 +3                  clr     lcd_rs
+0107 C291              179 +3                  clr     lcd_rw
+0109 D292              180 +3                  setb    lcd_en
+010B C292              181 +3                  clr     lcd_en
+010D 319A              182 +3                  acall   lcd_busy
+010F 0520              183 +1                  inc     p1_death
+0111 E520              184 +1                  mov     a , p1_death
+0113 2430              185 +1                  add     a , #30h
+0115 020138            186 +1                  jmp     deathcount_2__end
+                       187 +1                  deathcount_2__player2:
+                       188 +2                  LCD_setCursor   #02h , #string_pos_p2_death
+0118 7402              189 +2                  mov     a , #02h
+011A B40105            190 +2                  cjne    a , #01h , lcd_setcursor_6__line2
+011D 7480              191 +2                  mov     a , #80h
+011F 020124            192 +2                  jmp     lcd_setcursor_6__end
+                       193 +2                  lcd_setcursor_6__line2:
+0122 74C0              194 +2                  mov     a , #0c0h
+                       195 +2                  lcd_setcursor_6__end:
+0124 2413              196 +2                  add     a , #string_pos_p2_death
+                       197 +3                  LCD_command     a
+0126 F5A0              198 +3                  mov     lcd_data , a
+0128 C290              199 +3                  clr     lcd_rs
+012A C291              200 +3                  clr     lcd_rw
+012C D292              201 +3                  setb    lcd_en
+012E C292              202 +3                  clr     lcd_en
+0130 319A              203 +3                  acall   lcd_busy
+0132 0521              204 +1                  inc     p2_death
+0134 E521              205 +1                  mov     a , p2_death
+0136 2430              206 +1                  add     a , #30h
+                       207 +1                  deathcount_2__end:
+                       208 +2                  LCD_sendChar    a
+0138 F5A0              209 +2                  mov     lcd_data , a
+013A D290              210 +2                  setb    lcd_rs
+013C C291              211 +2                  clr     lcd_rw
+013E D292              212 +2                  setb    lcd_en
+0140 C292              213 +2                  clr     lcd_en
+0142 319A              214 +2                  acall   lcd_busy
+                       215
+                       216 +1          DEATHCOUNT #02h
+0144 7402              217 +1                  mov     a , #02h
+0146 B40123            218 +1                  cjne    a , #01 , deathcount_3__player2
+                       219 +2                  LCD_setCursor   #02h , #string_pos_p1_death
+0149 7402              220 +2                  mov     a , #02h
+014B B40105            221 +2                  cjne    a , #01h , lcd_setcursor_7__line2
+014E 7480              222 +2                  mov     a , #80h
+0150 020155            223 +2                  jmp     lcd_setcursor_7__end
+                       224 +2                  lcd_setcursor_7__line2:
+0153 74C0              225 +2                  mov     a , #0c0h
+                       226 +2                  lcd_setcursor_7__end:
+0155 240B              227 +2                  add     a , #string_pos_p1_death
+                       228 +3                  LCD_command     a
+0157 F5A0              229 +3                  mov     lcd_data , a
+0159 C290              230 +3                  clr     lcd_rs
+015B C291              231 +3                  clr     lcd_rw
+015D D292              232 +3                  setb    lcd_en
+015F C292              233 +3                  clr     lcd_en
+0161 319A              234 +3                  acall   lcd_busy
+0163 0520              235 +1                  inc     p1_death
+0165 E520              236 +1                  mov     a , p1_death
+0167 2430              237 +1                  add     a , #30h
+0169 02018C            238 +1                  jmp     deathcount_3__end
+                       239 +1                  deathcount_3__player2:
+                       240 +2                  LCD_setCursor   #02h , #string_pos_p2_death
+016C 7402              241 +2                  mov     a , #02h
+016E B40105            242 +2                  cjne    a , #01h , lcd_setcursor_8__line2
+0171 7480              243 +2                  mov     a , #80h
+0173 020178            244 +2                  jmp     lcd_setcursor_8__end
+                       245 +2                  lcd_setcursor_8__line2:
+0176 74C0              246 +2                  mov     a , #0c0h
+                       247 +2                  lcd_setcursor_8__end:
+0178 2413              248 +2                  add     a , #string_pos_p2_death
+                       249 +3                  LCD_command     a
+017A F5A0              250 +3                  mov     lcd_data , a
+017C C290              251 +3                  clr     lcd_rs
+017E C291              252 +3                  clr     lcd_rw
+0180 D292              253 +3                  setb    lcd_en
+0182 C292              254 +3                  clr     lcd_en
+0184 319A              255 +3                  acall   lcd_busy
+0186 0521              256 +1                  inc     p2_death
+0188 E521              257 +1                  mov     a , p2_death
+018A 2430              258 +1                  add     a , #30h
+                       259 +1                  deathcount_3__end:
+                       260 +2                  LCD_sendChar    a
+018C F5A0              261 +2                  mov     lcd_data , a
+018E D290              262 +2                  setb    lcd_rs
+0190 C291              263 +2                  clr     lcd_rw
+0192 D292              264 +2                  setb    lcd_en
+0194 C292              265 +2                  clr     lcd_en
+0196 319A              266 +2                  acall   lcd_busy
+                       267
+                       268
+0198 31D6              269             acall ENDE
+                       270
+                       271     LCD_busy:                       ;Wait until Busy-Flag is unset
+019A D2A7              272             setb   LCD_D7           ;Make D7th bit of LCD data port as i/p
+019C D292              273             setb   LCD_en           ;Make port pin as o/p
+019E C290              274             clr    LCD_rs           ;Select command register
+01A0 D291              275             setb   LCD_rw           ;we are reading
+                       276     check:
+01A2 C292              277             clr    LCD_en           ;Enable H-> L
+01A4 D292              278             setb   LCD_en
+01A6 E5A0              279             mov A, LCD_data
+01A8 20A7F7            280             jb     LCD_D7,check     ;read busy flag again and again till it becomes 0
+01AB 22                281             ret                     ;Return from busy routine
+                       282
+                       283     DEATHCOUNT macro player
+                       284             local PLAYER2
+                       285             local END
+                       286             mov A, player
+                       287             cjne A, #01, PLAYER2
+                       288             LCD_setCursor #02h, #STRING_POS_P1_DEATH
+                       289             inc P1_DEATH
+                       290             mov A, P1_DEATH
+                       291             add A, #30h
+                       292             jmp END
+                       293     player2:
+                       294             LCD_setCursor #02h, #STRING_POS_P2_DEATH
+                       295             inc P2_DEATH
+                       296             mov A, P2_DEATH
+                       297             add A, #30h
+                       298     end:
+                       299             LCD_sendChar A
+                       300     endm
+                       301
+                       302
+                       303     LCD_command macro cmd
+                       304             mov   LCD_data, cmd     ;Move the command to LCD port
+                       305             clr   LCD_rs            ;Selected command register
+                       306             clr   LCD_rw            ;We are writing in instruction register
+                       307             setb  LCD_en            ;Enable H-> L
+                       308             clr   LCD_en
+                       309             acall LCD_busy          ;Wait for LCD to process the command
+                       310     endm
+                       311
+                       312     LCD_sendChar macro char         ;call this macro like   LCD_sendChar 'A'
+                       313             mov     LCD_data, char  ;Move the command to LCD port
+                       314             setb    LCD_rs          ;Selected data register
+                       315             clr     LCD_rw          ;We are writing
+                       316             setb    LCD_en          ;Enable H-> L
+                       317             clr     LCD_en
+                       318             acall   LCD_busy        ;Wait for LCD to process the data
+                       319     endm
+                       320
+                       321     LCD_sendString macro string
+                       322             local START             ;define local macro variable
+                       323             local EXIT              ;define local macro variable
+                       324             mov   dpl, #low(string)
+                       325             mov   dph, #high(string)
+                       326     start:                          ;locale variables have to be in lowercase, idk why^^
+                       327             clr   a                 ;clear Accumulator for any previous data
+                       328             movc  a,@a+dptr         ;load the first character in accumulator
+                       329             jz    EXIT              ;go to exit if zero
+                       330             LCD_sendChar A          ;send actual char
+                       331             inc   dptr              ;increment data pointer
+                       332             sjmp  START    ;jump back to send the next character
+                       333     exit:                           ;locale variables have to be in lowercase, idk
+                       334     endm
+                       335
+                       336     LCD_setCursor macro line, position
+                       337             local LINE2             ;define local macro variable
+                       338             local END               ;define local macro variable
+                       339             mov A, line
+                       340             cjne A, #01h, LINE2     ;if line != 01h jump to LINE2
+                       341             mov A, #80h             ;startpoint for first line of LCD
+                       342             jmp END
+                       343     line2:                          ;locale variables have to be in lowercase, idk why^^
+                       344             mov A, #0C0h            ;startpoint for second line of LCD
+                       345     end:                            ;locale variables have to be in lowercase, idk why^^
+                       346             add A, position
+                       347             LCD_command A
+                       348     endm
+                       349
+                       350     ;strings
+01AC 5072657373        351     BEGIN:          DB 'Press START to begin', 0
+     2053544152
+     5420746F20
+     626567696E
+     00
+01C1 4445415448        352     DEATH:          DB 'DEATH  P1: 0   P2: 0', 0
+     202050313A
+     2030202020
+     50323A2030
+     00
+                       353
+                       354     ENDE:
+01D6 0201D6            355             jmp ENDE
+                       356             end
+ASSEMBLY COMPLETE, NO ERRORS FOUND, NO WARNINGS
+
+
+SYMBOL TABLE:
+??MCU_8051_IDE . . . . . . . . . . .  N  NUMB  8051H  NOT USED
+??VERSION. . . . . . . . . . . . . .  N  NUMB  0149H  NOT USED
+AC . . . . . . . . . . . . . . . . .  B  ADDR  00D6H  NOT USED
+ACC. . . . . . . . . . . . . . . . .  D  ADDR  00E0H  NOT USED
+ACSR . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
+ADCF . . . . . . . . . . . . . . . .  D  ADDR  00F6H  NOT USED
+ADCLK. . . . . . . . . . . . . . . .  D  ADDR  00F2H  NOT USED
+ADCON. . . . . . . . . . . . . . . .  D  ADDR  00F3H  NOT USED
+ADDH . . . . . . . . . . . . . . . .  D  ADDR  00F5H  NOT USED
+ADDL . . . . . . . . . . . . . . . .  D  ADDR  00F4H  NOT USED
+AUXR . . . . . . . . . . . . . . . .  D  ADDR  008EH  NOT USED
+AUXR1. . . . . . . . . . . . . . . .  D  ADDR  00A2H  NOT USED
+B. . . . . . . . . . . . . . . . . .  D  ADDR  00F0H  NOT USED
+BDRCON . . . . . . . . . . . . . . .  D  ADDR  009BH  NOT USED
+BDRCON_1 . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
+BEGIN. . . . . . . . . . . . . . . .  C  ADDR  01ACH
+BRL. . . . . . . . . . . . . . . . .  D  ADDR  009AH  NOT USED
+CCAP0H . . . . . . . . . . . . . . .  D  ADDR  00FAH  NOT USED
+CCAP0L . . . . . . . . . . . . . . .  D  ADDR  00EAH  NOT USED
+CCAP1H . . . . . . . . . . . . . . .  D  ADDR  00FBH  NOT USED
+CCAP1L . . . . . . . . . . . . . . .  D  ADDR  00EBH  NOT USED
+CCAP2H . . . . . . . . . . . . . . .  D  ADDR  00FCH  NOT USED
+CCAP3H . . . . . . . . . . . . . . .  D  ADDR  00FDH  NOT USED
+CCAP4H . . . . . . . . . . . . . . .  D  ADDR  00FEH  NOT USED
+CCAPL2H. . . . . . . . . . . . . . .  D  ADDR  00FCH  NOT USED
+CCAPL2L. . . . . . . . . . . . . . .  D  ADDR  00ECH  NOT USED
+CCAPL3H. . . . . . . . . . . . . . .  D  ADDR  00FDH  NOT USED
+CCAPL3L. . . . . . . . . . . . . . .  D  ADDR  00EDH  NOT USED
+CCAPL4H. . . . . . . . . . . . . . .  D  ADDR  00FEH  NOT USED
+CCAPL4L. . . . . . . . . . . . . . .  D  ADDR  00EEH  NOT USED
+CCAPM0 . . . . . . . . . . . . . . .  D  ADDR  00DAH  NOT USED
+CCAPM1 . . . . . . . . . . . . . . .  D  ADDR  00DBH  NOT USED
+CCAPM2 . . . . . . . . . . . . . . .  D  ADDR  00DCH  NOT USED
+CCAPM3 . . . . . . . . . . . . . . .  D  ADDR  00DDH  NOT USED
+CCAPM4 . . . . . . . . . . . . . . .  D  ADDR  00DEH  NOT USED
+CCF0 . . . . . . . . . . . . . . . .  B  ADDR  00D8H  NOT USED
+CCF1 . . . . . . . . . . . . . . . .  B  ADDR  00D9H  NOT USED
+CCF2 . . . . . . . . . . . . . . . .  B  ADDR  00DAH  NOT USED
+CCF3 . . . . . . . . . . . . . . . .  B  ADDR  00DBH  NOT USED
+CCF4 . . . . . . . . . . . . . . . .  B  ADDR  00DCH  NOT USED
+CCON . . . . . . . . . . . . . . . .  D  ADDR  00D8H  NOT USED
+CFINT. . . . . . . . . . . . . . . .  C  ADDR  0033H  NOT USED
+CH . . . . . . . . . . . . . . . . .  D  ADDR  00F9H  NOT USED
+CHECK. . . . . . . . . . . . . . . .  C  ADDR  01A2H
+CKCON. . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
+CKCON0 . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
+CKRL . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
+CKSEL. . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
+CL . . . . . . . . . . . . . . . . .  D  ADDR  00E9H  NOT USED
+CLKREG . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
+CMOD . . . . . . . . . . . . . . . .  D  ADDR  00D9H  NOT USED
+CPRL2. . . . . . . . . . . . . . . .  B  ADDR  00C8H  NOT USED
+CR . . . . . . . . . . . . . . . . .  B  ADDR  00DEH  NOT USED
+CT2. . . . . . . . . . . . . . . . .  B  ADDR  00C9H  NOT USED
+CY . . . . . . . . . . . . . . . . .  B  ADDR  00D7H  NOT USED
+DEATH. . . . . . . . . . . . . . . .  C  ADDR  01C1H
+DEATHCOUNT_1__END. . . . . . . . . .  C  ADDR  00E4H
+DEATHCOUNT_1__PLAYER2. . . . . . . .  C  ADDR  00C4H
+DEATHCOUNT_2__END. . . . . . . . . .  C  ADDR  0138H
+DEATHCOUNT_2__PLAYER2. . . . . . . .  C  ADDR  0118H
+DEATHCOUNT_3__END. . . . . . . . . .  C  ADDR  018CH
+DEATHCOUNT_3__PLAYER2. . . . . . . .  C  ADDR  016CH
+DP0H . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
+DP0L . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
+DP1H . . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
+DP1L . . . . . . . . . . . . . . . .  D  ADDR  0084H  NOT USED
+DPH. . . . . . . . . . . . . . . . .  D  ADDR  0083H
+DPL. . . . . . . . . . . . . . . . .  D  ADDR  0082H
+EA . . . . . . . . . . . . . . . . .  B  ADDR  00AFH  NOT USED
+EC . . . . . . . . . . . . . . . . .  B  ADDR  00AEH  NOT USED
+EECON. . . . . . . . . . . . . . . .  D  ADDR  0096H  NOT USED
+ENDE . . . . . . . . . . . . . . . .  C  ADDR  01D6H
+ES . . . . . . . . . . . . . . . . .  B  ADDR  00ACH  NOT USED
+ET0. . . . . . . . . . . . . . . . .  B  ADDR  00A9H  NOT USED
+ET1. . . . . . . . . . . . . . . . .  B  ADDR  00ABH  NOT USED
+ET2. . . . . . . . . . . . . . . . .  B  ADDR  00ADH  NOT USED
+EX0. . . . . . . . . . . . . . . . .  B  ADDR  00A8H  NOT USED
+EX1. . . . . . . . . . . . . . . . .  B  ADDR  00AAH  NOT USED
+EXEN2. . . . . . . . . . . . . . . .  B  ADDR  00CBH  NOT USED
+EXF2 . . . . . . . . . . . . . . . .  B  ADDR  00CEH  NOT USED
+EXTI0. . . . . . . . . . . . . . . .  C  ADDR  0003H  NOT USED
+EXTI1. . . . . . . . . . . . . . . .  C  ADDR  0013H  NOT USED
+F0 . . . . . . . . . . . . . . . . .  B  ADDR  00D5H  NOT USED
+FE . . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
+IE . . . . . . . . . . . . . . . . .  D  ADDR  00A8H  NOT USED
+IE0. . . . . . . . . . . . . . . . .  B  ADDR  0089H  NOT USED
+IE1. . . . . . . . . . . . . . . . .  B  ADDR  008BH  NOT USED
+INT0 . . . . . . . . . . . . . . . .  B  ADDR  00B2H  NOT USED
+INT1 . . . . . . . . . . . . . . . .  B  ADDR  00B3H  NOT USED
+IP . . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
+IPH. . . . . . . . . . . . . . . . .  D  ADDR  00B7H  NOT USED
+IPH0 . . . . . . . . . . . . . . . .  D  ADDR  00B7H  NOT USED
+IPH1 . . . . . . . . . . . . . . . .  D  ADDR  00B3H  NOT USED
+IPL0 . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
+IPL1 . . . . . . . . . . . . . . . .  D  ADDR  00B2H  NOT USED
+IT0. . . . . . . . . . . . . . . . .  B  ADDR  0088H  NOT USED
+IT1. . . . . . . . . . . . . . . . .  B  ADDR  008AH  NOT USED
+KBE. . . . . . . . . . . . . . . . .  D  ADDR  009DH  NOT USED
+KBF. . . . . . . . . . . . . . . . .  D  ADDR  009EH  NOT USED
+KBLS . . . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
+LCD_BUSY . . . . . . . . . . . . . .  C  ADDR  019AH
+LCD_D7 . . . . . . . . . . . . . . .  N  NUMB  00A7H
+LCD_DATA . . . . . . . . . . . . . .  N  NUMB  00A0H
+LCD_EN . . . . . . . . . . . . . . .  N  NUMB  0092H
+LCD_INIT . . . . . . . . . . . . . .  C  ADDR  0000H  NOT USED
+LCD_RS . . . . . . . . . . . . . . .  N  NUMB  0090H
+LCD_RW . . . . . . . . . . . . . . .  N  NUMB  0091H
+LCD_SENDSTRING_1__EXIT . . . . . . .  C  ADDR  0069H
+LCD_SENDSTRING_1__START. . . . . . .  C  ADDR  0056H
+LCD_SENDSTRING_2__EXIT . . . . . . .  C  ADDR  009CH
+LCD_SENDSTRING_2__START. . . . . . .  C  ADDR  0089H
+LCD_SETCURSOR_1__END . . . . . . . .  C  ADDR  0042H
+LCD_SETCURSOR_1__LINE2 . . . . . . .  C  ADDR  0040H
+LCD_SETCURSOR_2__END . . . . . . . .  C  ADDR  0075H
+LCD_SETCURSOR_2__LINE2 . . . . . . .  C  ADDR  0073H
+LCD_SETCURSOR_3__END . . . . . . . .  C  ADDR  00ADH
+LCD_SETCURSOR_3__LINE2 . . . . . . .  C  ADDR  00ABH
+LCD_SETCURSOR_4__END . . . . . . . .  C  ADDR  00D0H
+LCD_SETCURSOR_4__LINE2 . . . . . . .  C  ADDR  00CEH
+LCD_SETCURSOR_5__END . . . . . . . .  C  ADDR  0101H
+LCD_SETCURSOR_5__LINE2 . . . . . . .  C  ADDR  00FFH
+LCD_SETCURSOR_6__END . . . . . . . .  C  ADDR  0124H
+LCD_SETCURSOR_6__LINE2 . . . . . . .  C  ADDR  0122H
+LCD_SETCURSOR_7__END . . . . . . . .  C  ADDR  0155H
+LCD_SETCURSOR_7__LINE2 . . . . . . .  C  ADDR  0153H
+LCD_SETCURSOR_8__END . . . . . . . .  C  ADDR  0178H
+LCD_SETCURSOR_8__LINE2 . . . . . . .  C  ADDR  0176H
+OSCCON . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
+OV . . . . . . . . . . . . . . . . .  B  ADDR  00D2H  NOT USED
+P. . . . . . . . . . . . . . . . . .  B  ADDR  00D0H  NOT USED
+P0 . . . . . . . . . . . . . . . . .  D  ADDR  0080H  NOT USED
+P1 . . . . . . . . . . . . . . . . .  D  ADDR  0090H  NOT USED
+P1M1 . . . . . . . . . . . . . . . .  D  ADDR  00D4H  NOT USED
+P1M2 . . . . . . . . . . . . . . . .  D  ADDR  00E2H  NOT USED
+P1_DEATH . . . . . . . . . . . . . .  N  NUMB  0020H
+P2 . . . . . . . . . . . . . . . . .  D  ADDR  00A0H  NOT USED
+P2_DEATH . . . . . . . . . . . . . .  N  NUMB  0021H
+P3 . . . . . . . . . . . . . . . . .  D  ADDR  00B0H  NOT USED
+P3M1 . . . . . . . . . . . . . . . .  D  ADDR  00D5H  NOT USED
+P3M2 . . . . . . . . . . . . . . . .  D  ADDR  00E3H  NOT USED
+P4 . . . . . . . . . . . . . . . . .  D  ADDR  00C0H  NOT USED
+P4M1 . . . . . . . . . . . . . . . .  D  ADDR  00D6H  NOT USED
+P4M2 . . . . . . . . . . . . . . . .  D  ADDR  00E4H  NOT USED
+P5 . . . . . . . . . . . . . . . . .  D  ADDR  00E8H  NOT USED
+PC . . . . . . . . . . . . . . . . .  B  ADDR  00BEH  NOT USED
+PCON . . . . . . . . . . . . . . . .  D  ADDR  0087H  NOT USED
+PPCL . . . . . . . . . . . . . . . .  B  ADDR  00BEH  NOT USED
+PS . . . . . . . . . . . . . . . . .  B  ADDR  00BCH  NOT USED
+PSL. . . . . . . . . . . . . . . . .  B  ADDR  00BCH  NOT USED
+PSW. . . . . . . . . . . . . . . . .  D  ADDR  00D0H  NOT USED
+PT0. . . . . . . . . . . . . . . . .  B  ADDR  00B9H  NOT USED
+PT0L . . . . . . . . . . . . . . . .  B  ADDR  00B9H  NOT USED
+PT1. . . . . . . . . . . . . . . . .  B  ADDR  00BBH  NOT USED
+PT1L . . . . . . . . . . . . . . . .  B  ADDR  00BBH  NOT USED
+PT2. . . . . . . . . . . . . . . . .  B  ADDR  00BDH  NOT USED
+PT2L . . . . . . . . . . . . . . . .  B  ADDR  00BDH  NOT USED
+PX0. . . . . . . . . . . . . . . . .  B  ADDR  00B8H  NOT USED
+PX0L . . . . . . . . . . . . . . . .  B  ADDR  00B8H  NOT USED
+PX1. . . . . . . . . . . . . . . . .  B  ADDR  00BAH  NOT USED
+PX1L . . . . . . . . . . . . . . . .  B  ADDR  00BAH  NOT USED
+RB8. . . . . . . . . . . . . . . . .  B  ADDR  009AH  NOT USED
+RCAP2H . . . . . . . . . . . . . . .  D  ADDR  00CBH  NOT USED
+RCAP2L . . . . . . . . . . . . . . .  D  ADDR  00CAH  NOT USED
+RCLK . . . . . . . . . . . . . . . .  B  ADDR  00CDH  NOT USED
+RD . . . . . . . . . . . . . . . . .  B  ADDR  00B7H  NOT USED
+REN. . . . . . . . . . . . . . . . .  B  ADDR  009CH  NOT USED
+RESET. . . . . . . . . . . . . . . .  C  ADDR  0000H  NOT USED
+RI . . . . . . . . . . . . . . . . .  B  ADDR  0098H  NOT USED
+RS0. . . . . . . . . . . . . . . . .  B  ADDR  00D3H  NOT USED
+RS1. . . . . . . . . . . . . . . . .  B  ADDR  00D4H  NOT USED
+RXD. . . . . . . . . . . . . . . . .  B  ADDR  00B0H  NOT USED
+SADDR. . . . . . . . . . . . . . . .  D  ADDR  00A9H  NOT USED
+SADDR_0. . . . . . . . . . . . . . .  D  ADDR  00A9H  NOT USED
+SADDR_1. . . . . . . . . . . . . . .  D  ADDR  00AAH  NOT USED
+SADEN. . . . . . . . . . . . . . . .  D  ADDR  00B9H  NOT USED
+SADEN_0. . . . . . . . . . . . . . .  D  ADDR  00B9H  NOT USED
+SADEN_1. . . . . . . . . . . . . . .  D  ADDR  00BAH  NOT USED
+SBUF . . . . . . . . . . . . . . . .  D  ADDR  0099H  NOT USED
+SCON . . . . . . . . . . . . . . . .  D  ADDR  0098H  NOT USED
+SINT . . . . . . . . . . . . . . . .  C  ADDR  0023H  NOT USED
+SM0. . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
+SM1. . . . . . . . . . . . . . . . .  B  ADDR  009EH  NOT USED
+SM2. . . . . . . . . . . . . . . . .  B  ADDR  009DH  NOT USED
+SP . . . . . . . . . . . . . . . . .  D  ADDR  0081H  NOT USED
+SPCON. . . . . . . . . . . . . . . .  D  ADDR  00C3H  NOT USED
+SPCR . . . . . . . . . . . . . . . .  D  ADDR  00D5H  NOT USED
+SPDAT. . . . . . . . . . . . . . . .  D  ADDR  00C5H  NOT USED
+SPDR . . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
+SPSR . . . . . . . . . . . . . . . .  D  ADDR  00AAH  NOT USED
+SPSTA. . . . . . . . . . . . . . . .  D  ADDR  00C4H  NOT USED
+STRING_POS_P1_DEATH. . . . . . . . .  N  NUMB  000BH
+STRING_POS_P2_DEATH. . . . . . . . .  N  NUMB  0013H
+T0 . . . . . . . . . . . . . . . . .  B  ADDR  00B4H  NOT USED
+T1 . . . . . . . . . . . . . . . . .  B  ADDR  00B5H  NOT USED
+T2CON. . . . . . . . . . . . . . . .  D  ADDR  00C8H  NOT USED
+T2MOD. . . . . . . . . . . . . . . .  D  ADDR  00C9H  NOT USED
+TB8. . . . . . . . . . . . . . . . .  B  ADDR  009BH  NOT USED
+TCLK . . . . . . . . . . . . . . . .  B  ADDR  00CCH  NOT USED
+TCON . . . . . . . . . . . . . . . .  D  ADDR  0088H  NOT USED
+TF0. . . . . . . . . . . . . . . . .  B  ADDR  008DH  NOT USED
+TF1. . . . . . . . . . . . . . . . .  B  ADDR  008FH  NOT USED
+TF2. . . . . . . . . . . . . . . . .  B  ADDR  00CFH  NOT USED
+TH0. . . . . . . . . . . . . . . . .  D  ADDR  008CH  NOT USED
+TH1. . . . . . . . . . . . . . . . .  D  ADDR  008DH  NOT USED
+TH2. . . . . . . . . . . . . . . . .  D  ADDR  00CDH  NOT USED
+TI . . . . . . . . . . . . . . . . .  B  ADDR  0099H  NOT USED
+TIMER0 . . . . . . . . . . . . . . .  C  ADDR  000BH  NOT USED
+TIMER1 . . . . . . . . . . . . . . .  C  ADDR  001BH  NOT USED
+TIMER2 . . . . . . . . . . . . . . .  C  ADDR  002BH  NOT USED
+TL0. . . . . . . . . . . . . . . . .  D  ADDR  008AH  NOT USED
+TL1. . . . . . . . . . . . . . . . .  D  ADDR  008BH  NOT USED
+TL2. . . . . . . . . . . . . . . . .  D  ADDR  00CCH  NOT USED
+TMOD . . . . . . . . . . . . . . . .  D  ADDR  0089H  NOT USED
+TR0. . . . . . . . . . . . . . . . .  B  ADDR  008CH  NOT USED
+TR1. . . . . . . . . . . . . . . . .  B  ADDR  008EH  NOT USED
+TR2. . . . . . . . . . . . . . . . .  B  ADDR  00CAH  NOT USED
+TXD. . . . . . . . . . . . . . . . .  B  ADDR  00B1H  NOT USED
+WDTCON . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
+WDTPRG . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
+WDTRST . . . . . . . . . . . . . . .  D  ADDR  00A6H  NOT USED
+WR . . . . . . . . . . . . . . . . .  B  ADDR  00B6H  NOT USED

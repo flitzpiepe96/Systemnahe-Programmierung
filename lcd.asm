@@ -3,18 +3,21 @@ LCD_D7   equ P2.7		;LCD D7/Busy Flag
 LCD_rs   equ P1.0		;LCD Register Select
 LCD_rw   equ P1.1		;LCD Read/Write
 LCD_en   equ P1.2		;LCD Enable
+CURSOR_POS equ 35h
 
-P1_DEATH equ 0x20
-P2_DEATH equ 0x21
-STRING_POS_P1_DEATH equ 0bh
-STRING_POS_P2_DEATH equ 13h
+P1_DEATH equ 30h
+P2_DEATH equ 31h
+STRING_POS_P1_DEATH equ 32h
+STRING_POS_P2_DEATH equ 33h
 
 
-LCD_init:
+lcd_init:
+	mov STRING_POS_P1_DEATH, #0bh ;set string position P1
+	mov STRING_POS_P2_DEATH, #13h ;set string position P2
 	acall LCD_busy       	;Wait for LCD to process the command
 
 	LCD_command #38h	;Function set: 2 Line, 8-bit, 5x7 dots
-	LCD_command #0ch  	;Display on, Curson blinking command
+	LCD_command #0ch  	;Display on, without cursor
 	LCD_command #01H  	;Clear LCD
 	LCD_command #06H  	;Entry mode, auto increment with no shift
 
@@ -24,15 +27,9 @@ LCD_init:
 	LCD_setCursor #02h, #00h
 	LCD_sendString DEATH
 
-	DEATHCOUNT #01h
-	DEATHCOUNT #01h
+	ret
 
-	DEATHCOUNT #02h
-	
-	
-	acall ENDE
-
-LCD_busy:			;Wait until Busy-Flag is unset
+lcd_busy:			;Wait until Busy-Flag is unset
 	setb   LCD_D7		;Make D7th bit of LCD data port as i/p
 	setb   LCD_en		;Make port pin as o/p
 	clr    LCD_rs		;Select command register
@@ -44,18 +41,18 @@ check:
 	jb     LCD_D7,check	;read busy flag again and again till it becomes 0
 	ret			;Return from busy routine
 
-DEATHCOUNT macro player
+deathcount macro player
 	local PLAYER2
 	local END
 	mov A, player
-	cjne A, #01, PLAYER2
-	LCD_setCursor #02h, #STRING_POS_P1_DEATH
+	cjne A, #01h, PLAYER2
+	LCD_setCursor #02h, STRING_POS_P1_DEATH
 	inc P1_DEATH
 	mov A, P1_DEATH
 	add A, #30h
 	jmp END
 player2:
-	LCD_setCursor #02h, #STRING_POS_P2_DEATH
+	LCD_setCursor #02h, STRING_POS_P2_DEATH
 	inc P2_DEATH
 	mov A, P2_DEATH
 	add A, #30h
@@ -64,7 +61,7 @@ end:
 endm
 	
 
-LCD_command macro cmd
+lcd_command macro cmd
 	mov   LCD_data, cmd	;Move the command to LCD port
 	clr   LCD_rs		;Selected command register
 	clr   LCD_rw		;We are writing in instruction register
@@ -73,16 +70,17 @@ LCD_command macro cmd
 	acall LCD_busy		;Wait for LCD to process the command
 endm
 
-LCD_sendChar macro char		;call this macro like   LCD_sendChar 'A'
+lcd_sendChar macro char		;call this macro like   LCD_sendChar #'A'
 	mov   	LCD_data, char 	;Move the command to LCD port
 	setb	LCD_rs		;Selected data register
 	clr	LCD_rw		;We are writing
 	setb	LCD_en		;Enable H-> L
 	clr	LCD_en
+	inc	CURSOR_POS	;save new cursor position
 	acall	LCD_busy	;Wait for LCD to process the data
 endm
 
-LCD_sendString macro string
+lcd_sendString macro string
 	local START		;define local macro variable
 	local EXIT		;define local macro variable
 	mov   dpl, #low(string)
@@ -97,9 +95,10 @@ start:				;locale variables have to be in lowercase, idk why^^
 exit:				;locale variables have to be in lowercase, idk
 endm
 
-LCD_setCursor macro line, position
+lcd_setCursor macro line, position
 	local LINE2		;define local macro variable
 	local END		;define local macro variable
+	mov CURSOR_POS, position;save new cursor position
 	mov A, line
 	cjne A, #01h, LINE2	;if line != 01h jump to LINE2
 	mov A, #80h		;startpoint for first line of LCD
@@ -111,10 +110,16 @@ end:				;locale variables have to be in lowercase, idk why^^
 	LCD_command A
 endm
 
-;strings
-BEGIN:		DB 'Press START to begin', 0
-DEATH:		DB 'DEATH  P1: 0   P2: 0', 0
+lcd_clearToEndOfLine:
+	mov A, CURSOR_POS	;load current cursor positon
+	cjne A, #20h, blank
+	ret
+blank:
+	lcd_sendChar #' '
+	jmp lcd_clearToEndOfLine
 
-ENDE:
-	jmp ENDE
-	end
+;strings
+BEGIN:		DB 'Hit BUZZER to start!', 0
+DEATH:		DB 'DEATH  P1: 0   P2: 0', 0
+ACTIVE:		DB 'Active Player: ',0
+

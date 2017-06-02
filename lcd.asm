@@ -112,7 +112,7 @@ endm
 
 lcd_clearToEndOfLine:
 	mov A, CURSOR_POS	;load current cursor positon
-	cjne A, #20h, blank
+	cjne A, #14h, blank	;A!=20
 	ret
 blank:
 	lcd_sendChar #' '

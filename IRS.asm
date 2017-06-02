@@ -1,10 +1,5 @@
 BUZZER_IR equ p3.2
-BUZZER equ 40h
-
-	ljmp IRS_init
-
-org 03h				; INT0
-	ljmp int0_handler
+BUZZER equ B.0
 
 IRS_init:
 	setb EA			;enable Interrupts
@@ -13,6 +8,6 @@ IRS_init:
 	ret
 
 int0_handler:
-	mov BUZZER, #01h
+	setb BUZZER		;set BUZZER
 	clr IE0
 	reti	

@@ -11,11 +11,20 @@ main:
 	mov STRING_POS_ACTIVE_PLAYER, #0Fh;set string position
 	call irs_init
 	call lcd_init			;initialize LCD
+	call random_init
 
 gamestart:
 	acall waitForBuzzer
 
-	mov ACTIVE_PLAYER, #01h		;set active player, this will be replaced with random
+	; set active player based on random number
+	call random_next
+	mov A,RANDOM_NUM
+	
+	mov ACTIVE_PLAYER, #01h
+	jb A.0,gamestart_afterplayer
+	mov ACTIVE_PLAYER, #02
+gamestart_afterplayer:
+	
 	;send Active Player to LCD
 	lcd_setCursor #01h, #00h
 	lcd_sendString ACTIVE	
@@ -55,6 +64,7 @@ sendActivePlayerNumber:
 
 include lcd.asm
 include IRS.asm
+include random.asm
 
 ende:
 	jmp ende

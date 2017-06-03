@@ -119,6 +119,7 @@ blank:
 	jmp lcd_clearToEndOfLine
 
 ;strings
+cseg
 BEGIN:		DB 'Hit BUZZER to start!', 0
 DEATH:		DB 'DEATH  P1: 0   P2: 0', 0
 ACTIVE:		DB 'Active Player: ',0

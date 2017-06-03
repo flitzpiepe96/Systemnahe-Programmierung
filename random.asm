@@ -1,16 +1,8 @@
-org 0h
-jmp debug
-
-
-dseg at 50h
-
+dseg at 40h
 ; A random 8bit number. This is also the seed for
 ; the random_next function, which has no state
 ; beyond the last calculated random number.
 RANDOM_NUM: ds 1
-
-
-org 20h
 
 ; stolen from Lausen's moodle room
 
@@ -20,6 +12,7 @@ org 20h
 ; implementation of a standard MWC or LFSR-based
 ; PRNG to have an actual learning experience here.
 
+cseg
 ; Writes random number in RANDOM_NUM,
 ; uses last one as seed.
 random_next:
@@ -35,10 +28,7 @@ random_2:
 	mov	RANDOM_NUM, A
 	ret
 
-debug:
-	; random seed
+random_init:
+	; yeah this is really bad
 	mov RANDOM_NUM,#42
-
-	; generate some random numbers
-gen:	call random_next
-	jmp gen
+	ret

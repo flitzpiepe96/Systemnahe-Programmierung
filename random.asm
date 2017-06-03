@@ -15,19 +15,21 @@ RANDOM_NUM: ds 1
 cseg
 ; Writes random number in RANDOM_NUM,
 ; uses last one as seed.
+; 8-bit galois lsfr implemented according to wikipedia
 random_next:
-	mov	A, RANDOM_NUM
-	jnz	random_2
-	cpl	A
-	mov	RANDOM_NUM, A
-random_2:
-	anl	a, #10111000b
-	mov	C, P
-	mov	A, RANDOM_NUM
-	rlc	A
-	mov	RANDOM_NUM, A
-	ret
+	mov A, RANDOM_NUM
 
+	clr C
+	rrc A ; rotate right
+	jnc random_skipmask
+
+	; apply xor mask for x^8+x^6+x^5+x^4+1
+	xrl A,#10111000b
+random_skipmask:
+	mov RANDOM_NUM,A
+	
+	ret
+	
 random_init:
 	; yeah this is really bad
 	mov RANDOM_NUM,#42

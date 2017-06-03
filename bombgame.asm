@@ -17,6 +17,7 @@ gamestart:
 	acall waitForBuzzer
 
 	; set active player based on random number
+	call random_seed_from_timer
 	call random_next
 	mov A,RANDOM_NUM
 	

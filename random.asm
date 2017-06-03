@@ -32,5 +32,25 @@ random_skipmask:
 	
 random_init:
 	; yeah this is really bad
+	; but hopefully someone will call
+	; random_seed_from_timer sometime soon
 	mov RANDOM_NUM,#42
+
+	; setup timer 1 for random seed values
+	; WTF: we can't set M11/M01 directly, even though
+	; that does work with M10/M00. We could use Timer0,
+	; but we'd rather reserve it for the countdown
+	orl TMOD,#00100000b
+	anl TMOD,#11101111b
+	setb TR1
+	
+	ret
+
+random_seed_from_timer:
+	mov A,TL1
+	; our LSFR won't work if all bits are zero
+	jnz random_seed_from_timer_nonzero
+	mov A,#0FFh
+random_seed_from_timer_nonzero:
+	mov RANDOM_NUM,A
 	ret

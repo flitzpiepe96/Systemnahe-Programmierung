@@ -39,15 +39,15 @@ gamestart_afterplayer:
 	; setup timer
 	; TODO: Use RNG
 	; in the simulator, this is about 10 to 20 seconds
-	mov timer_dec_counter,#5
-	mov timer_dec_counter+1,#0
+	mov TIMER_DEC_COUNTER,#5
+	mov TIMER_DEC_COUNTER+1,#0
 	
 	clr BUZZER
 
 throwBomb:
 	; exit game on timeout
-	mov A,timer_dec_counter
-	orl A,timer_dec_counter+1
+	mov A,TIMER_DEC_COUNTER
+	orl A,TIMER_DEC_COUNTER+1
 	jz game_timeout
 
 	; check for button press

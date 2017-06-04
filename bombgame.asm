@@ -5,7 +5,7 @@ org 03h				; INT0
 org 0bh
 	ljmp timer_int_handler
 
-org 100h
+org 10h
 ACTIVE_PLAYER equ 20h
 STRING_POS_ACTIVE_PLAYER equ 21h
 
@@ -14,6 +14,7 @@ main:
 	call irs_init
 	call lcd_init			;initialize LCD
 	call random_init
+	;call timer_load_realworld_defaults
 	call timer_load_simulator_defaults
 	call timer_init
 
@@ -37,11 +38,38 @@ gamestart_afterplayer:
 	acall lcd_clearToEndOfLine
 
 	; setup timer
-	; TODO: Use RNG
-	; in the simulator, this is about 10 to 20 seconds
-	mov TIMER_DEC_COUNTER,#5
-	mov TIMER_DEC_COUNTER+1,#0
+
+	call random_next
 	
+	; Up to 30s random game time
+	; 30000ms = 117 * 255 ms
+	; yai, we can use the 8051's 8x8->16 multiplication!
+	;mov A,#117
+	;mov B,RANDOM_NUM
+	;mul AB
+
+	; In the simulator: 15 ticks max
+	mov A,RANDOM_NUM
+	anl A,#00001111b
+	mov B,#0
+	
+	; Additionally: Minimum game length: 10s = 0x2710ms
+	; using 16bit addition like a pleb
+	;add A,#10h
+	;mov R0,A ; R0 as temporary
+	;mov A,B
+	;addc A,#27h
+
+	; In the simulator: 10 extra ticks
+	; no 16bit addition necessary here
+	add A,#10
+	mov R0,A
+	mov A,#0
+
+	; now write the result to the timer
+	mov TIMER_DEC_COUNTER,R0
+	mov TIMER_DEC_COUNTER+1,A
+
 	clr BUZZER
 
 throwBomb:

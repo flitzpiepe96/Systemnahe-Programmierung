@@ -1,7 +1,3 @@
-; debug code
-ORG 0h
-jmp debug
-
 ; ------------------------
 ; Why so complicated?
 ;
@@ -22,16 +18,9 @@ jmp debug
 ; Of course the whole thing is a bit moot since our simulator 
 ; is at least a factor 10k slower
 
-; Timer ISR
-ORG 0bh
-call timer_int_handler
-reti
-
-ORG 20h
-
 ; -----------
 ; global variables
-dseg at 30h;
+dseg at 50h;
 
 ; 16-bit number (LE) to load into timer register
 timer_reload_val: ds 2
@@ -45,8 +34,8 @@ timer_dec_counter: ds 2
 ; we don't remove it because who knows what would break
 timer_inc_counter: ds 1
 
-
-timerinit:
+cseg
+timer_init:
 	; Subroutine to setup the timer
 
 	; reset timer counter
@@ -54,7 +43,8 @@ timerinit:
 	mov TH0,TIMER_RELOAD_VAL+1;
 	
 	; intialize timer mode: timer 0 in 16 bit mode
-	mov TMOD,#01h;
+	anl TMOD,#11111101b
+	orl TMOD,#00000001b
 	setb TR0;
 
 	; enable timer interrupt
@@ -80,7 +70,7 @@ timer_lo_zero:
 timer_hi_zero:
 	inc TIMER_INC_COUNTER
 
-	ret
+	reti
 
 timer_load_realworld_defaults:
 	; in the real world, we count milliseconds
@@ -96,14 +86,3 @@ timer_load_simulator_defaults:
 	mov TIMER_RELOAD_VAL+1,#0FFh
 
 	ret
-debug:	
-	; call initializer
-	call timer_load_simulator_defaults
-	
-	mov TIMER_DEC_COUNTER,#10h
-	mov TIMER_DEC_COUNTER+1,#01h
-	call timerinit;
-
-	; loop
-	jmp $
-	

@@ -53,8 +53,10 @@ timer_init:
 
 	ret;
 
-timer_int_handler:	
+timer_int_handler:
 	; timer interrupt handler
+	mov R7, A 			; save current acc
+	
 	mov TL0,TIMER_RELOAD_VAL;
 	mov TH0,TIMER_RELOAD_VAL+1;
 
@@ -70,6 +72,7 @@ timer_lo_zero:
 timer_hi_zero:
 	inc TIMER_INC_COUNTER
 
+	mov A, R7			; reset acc to state before interrupt
 	reti
 
 timer_load_realworld_defaults:

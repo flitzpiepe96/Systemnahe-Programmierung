@@ -90,8 +90,39 @@ throwBomb:
 	ljmp throwBomb
 
 game_timeout:
-	; todo: game over screen, allow restart
-	ljmp ende
+	;display which player lost
+	lcd_setCursor #01h, #00h
+	lcd_sendString BOOM
+	call sendActivePlayerNumber
+
+	deathcount ACTIVE_PLAYER ;count and display the death for looser
+
+	; Wait for 3s = 0xBB8ms
+	; using 16bit addition like a pleb
+	;add A,#0B8h
+	;mov R0,A ; R0 as temporary
+	;mov A,B
+	;addc A,#0Bh
+
+	; In the simulator: 5 extra ticks
+	; no 16bit addition necessary here
+	mov A,#05h
+	mov R0,A
+	mov A,#0
+
+	; now write the result to the timer
+	mov TIMER_DEC_COUNTER,R0
+	mov TIMER_DEC_COUNTER+1,A
+
+loopTimeout:
+	mov A,TIMER_DEC_COUNTER
+	orl A,TIMER_DEC_COUNTER+1
+	jnz loopTimeout
+
+	LCD_setCursor #01h, #00h
+	LCD_sendString BEGIN
+
+	ljmp gamestart
 
 waitForBuzzer:
 	clr BUZZER			;reset BUZZER
@@ -121,6 +152,4 @@ include IRS.asm
 include random.asm
 include timers.asm
 
-ende:
-	jmp ende
 	end

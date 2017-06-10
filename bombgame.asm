@@ -5,21 +5,25 @@ org 03h				; INT0
 org 0bh
 	ljmp timer_int_handler
 
-org 10h
-ACTIVE_PLAYER equ 20h
-STRING_POS_ACTIVE_PLAYER equ 21h
+dseg at 20h
+ACTIVE_PLAYER: ds 1 		;8-bit Number
+P1_DEATH: ds 1			;8-bit Number
+P2_DEATH: ds 1			;8-bit Number
 
+cseg
 main:
-	mov STRING_POS_ACTIVE_PLAYER, #0Fh;set string position
-	call irs_init
+	call irs_init			;initialize external interrupt
 	call lcd_init			;initialize LCD
-	call random_init
+	call random_init		;initialize randoms
 	;call timer_load_realworld_defaults
 	call timer_load_simulator_defaults
-	call timer_init
+	call timer_init			;initialize timers
 
 gamestart:
-	acall waitForBuzzer
+	LCD_setCursor #01h, #00h
+	LCD_sendString BEGIN
+	
+	call waitForBuzzer
 
 	; set active player based on random number
 	call random_seed_from_timer
@@ -34,8 +38,8 @@ gamestart_afterplayer:
 	;send Active Player to LCD
 	lcd_setCursor #01h, #00h
 	lcd_sendString ACTIVE	
-	acall sendActivePlayerNumber
-	acall lcd_clearToEndOfLine
+	call sendActivePlayerNumber
+	call lcd_clearToEndOfLine
 
 	; setup timer
 
@@ -85,8 +89,8 @@ throwBomb:
 	; pressed
 	clr BUZZER
 	
-	acall toggleActivePlayer
-	acall sendActivePlayerNumber
+	call toggleActivePlayer
+	call sendActivePlayerNumber
 	ljmp throwBomb
 
 game_timeout:
@@ -118,9 +122,6 @@ loopTimeout:
 	mov A,TIMER_DEC_COUNTER
 	orl A,TIMER_DEC_COUNTER+1
 	jnz loopTimeout
-
-	LCD_setCursor #01h, #00h
-	LCD_sendString BEGIN
 
 	ljmp gamestart
 

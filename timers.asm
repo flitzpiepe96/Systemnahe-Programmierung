@@ -56,6 +56,7 @@ timer_init:
 timer_int_handler:
 	; timer interrupt handler
 	mov R7, A 			; save current acc
+	clr IE0				; prevent INT0 from getting triggered with timer ir
 	
 	mov TL0,TIMER_RELOAD_VAL;
 	mov TH0,TIMER_RELOAD_VAL+1;

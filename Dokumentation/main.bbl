@@ -1,0 +1,35 @@
+\begin{thebibliography}{1}
+
+\bibitem{bib:assembler}
+{Wikipedia}.
+\newblock {Assemblersprache}.
+\newblock \url{https://de.wikipedia.org/wiki/Assemblersprache}.
+\newblock Datum: 20.06.2017.
+
+\bibitem{bib:assembler_book}
+Ernst-Wolfgang Dieterich.
+\newblock {\em Assembler: Grundlagen der PC-Programmierung}.
+\newblock Oldenbourg Wissenschaftsverlag GmbH, 2005.
+\newblock S.2.
+
+\bibitem{bib:8051}
+{Tutorialspoint}.
+\newblock {Embedded Systems - 8051 Microcontroller}.
+\newblock
+  \url{https://www.tutorialspoint.com/embedded_systems/es_microcontroller.htm}.
+\newblock Datum: 20.06.2017.
+
+\bibitem{bib:8051_2}
+{Mikrocontroller.net}.
+\newblock {8051}.
+\newblock \url{https://www.mikrocontroller.net/articles/8051}.
+\newblock Datum: 20.06.2017.
+
+\bibitem{bib:mcu}
+{Xtronic}.
+\newblock {Download MCU 8051 IDE integrated development enviroment for 8051}.
+\newblock
+  \url{https://xtronic.org/download/microcontroller/mcu-8051-ide-microcontrollers-development/}.
+\newblock Datum: 20.06.2017.
+
+\end{thebibliography}

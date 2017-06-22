@@ -1,0 +1,102 @@
+\documentclass[12pt,a4paper,oneside,titlepage,liststotoc,bibtotoc]{scrreprt}
+\usepackage[utf8]{inputenc}
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm,includehead,includefoot,headsep=1cm]{geometry}
+\usepackage[ngerman]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{acronym}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{microtype}
+\usepackage[toc, nogroupskip, nonumberlist, nopostdot]{glossaries}
+\usepackage{array}
+
+% Infos
+\newcommand{\titel}{Dokumentation Projektarbeit}
+\newcommand{\untertitel}{Bombenspiel}
+\newcommand{\arbeit}{}
+\newcommand{\pruefung}{Bachelor of Science}
+\newcommand{\studiengang}{Informatik}
+\newcommand{\studienrichtung}{Angewandte Informatik}
+\newcommand{\autor}{Jonas Kümmerlin, Simon Knab, Sandra Kramlich, Marco Herglotz}
+\newcommand{\matrikelnr}{}
+\newcommand{\kurs}{TINF15B4}
+\newcommand{\firma}{}
+\newcommand{\abgabe}{22. Juni 2017}
+\newcommand{\betreuerdhbw}{}
+\newcommand{\betreuerfirma}{}
+\newcommand{\jahr}{2017}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\source}[1]{\footnotesize Quelle: \url{#1}}
+\newcommand{\zitat}[1]{\glqq{}#1\grqq{}}
+
+% Logos
+\newcommand{\logodhbw}{\includegraphics[width=6cm]{img/logos/dhbw}}
+\newcommand{\logofirma}{\includegraphics[width=6cm]{img/logos/dhbw}}
+
+% Definition der Kopf- und Fußzeilen
+\fancyhf{}
+\fancyhead[L]{\sffamily \autor}
+\fancyhead[R]{\sffamily \nouppercase{\leftmark}}
+\fancyfoot[C]{\sffamily \thepage}
+%\renewcommand{\chapterpagestyle}{scrheadings}
+
+\pagestyle{fancy}
+\onehalfspacing
+
+%code style for listings
+\definecolor{javared}{rgb}{0.6,0,0} % for strings
+\definecolor{javagreen}{rgb}{0.25,0.5,0.35} % comments
+\definecolor{javapurple}{rgb}{0.5,0,0.35} % keywords
+\definecolor{javadocblue}{rgb}{0.25,0.35,0.75} % javadoc
+
+\renewcommand{\lstlistingname}{Programmcode}
+\lstset{language=[x86masm]Assembler,
+	basicstyle=\ttfamily\footnotesize,
+	keywordstyle=\color{javapurple}\bfseries,
+	stringstyle=\color{javared},
+	commentstyle=\color{javagreen},
+	morecomment=[s][\color{javadocblue}]{/**}{*/},
+	tabsize=4,
+	showspaces=false,
+	showstringspaces=false,
+	frame=single,
+	breaklines=true,
+	captionpos=b
+}
+
+\setlist[2]{noitemsep}
+
+\begin{document}
+
+\include{content/general/titelseite}
+\include{content/general/erklaerung}
+
+\tableofcontents
+\clearpage
+
+\include{content/Einleitung}
+\include{content/Grundlagen}
+\include{content/Konzept}
+\include{content/Implementierung}
+\include{content/Zusammenfassung}
+
+\begin{appendix}
+
+\bibliographystyle{unsrt}
+\raggedright
+\bibliography{references/bibliothek}
+
+\noindent
+\begin{minipage}{\textwidth}
+	\listoffigures
+\end{minipage}
+
+\end{appendix}
+	
+\end{document}

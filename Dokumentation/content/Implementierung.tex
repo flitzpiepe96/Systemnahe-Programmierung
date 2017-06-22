@@ -1,0 +1,232 @@
+\chapter{Implementierung}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[scale=1.5]{img/wunder}
+\end{figure}
+\source{http://www.informatik.uni-oldenburg.de/~sos/kurse09/img/projekte.jpg}
+
+
+\section{Buzzer}
+
+Der Buzzer wurde wie bereits erwähnt mit einer Interrupt Steuerung implementiert. Der Quellcode ist in Programmcode \ref{code:buzzer} abgebildet. 
+
+\noindent
+\begin{minipage}[t]{\textwidth}
+	\vspace{1em}
+	\begin{lstlisting}[caption=Quellcode für den Buzzer Interrupt, label=code:buzzer]
+	BUZZER_IR equ p3.2
+	BUZZER equ B.0
+	
+	IRS_init:
+	setb EA			;enable Interrupts
+	setb EX0		;enable INT0
+	setb IT0		;make INT0 edge triggered
+	ret
+	
+	int0_handler:
+	setb BUZZER		;set BUZZER
+	clr IE0
+	reti	
+	\end{lstlisting}
+\end{minipage}
+
+\section{Zufallsgenerator}
+
+Der Sprungpunkt \code{random\_init} wird beim Starten des Programms aufgerufen um den Zufallsgenerator zu initialisieren. Für die erste erzeugte Zufallszahl wird der Wert von \code{Timer1} verwendet und mit dem Sprungpunkt \code{random\_next\_from\_timer} angesprochen. Danach wird immer \code{random\_next} verwendet, um eine auf der letzten Zufallszahl basierte neue Zufallszahl zu erhalten.
+
+\noindent
+\begin{minipage}[t]{\textwidth}
+	\vspace{1em}
+	\begin{lstlisting}[caption=Quellcode für die Zufallszahlen-Generierung, label=code:random]
+; Writes random number in RANDOM_NUM,
+; uses last one as seed.
+; 8-bit galois lsfr implemented according to wikipedia
+random_next:
+mov A, RANDOM_NUM
+
+clr C
+rrc A ; rotate right
+jnc random_skipmask
+
+xrl A,#10111000b		; apply xor mask for x^8+x^6+x^5+x^4+1
+random_skipmask:
+mov RANDOM_NUM,A
+
+ret
+
+random_init:
+mov RANDOM_NUM,#42
+
+; setup timer 1 for random seed values
+orl TMOD,#00100000b
+anl TMOD,#11101111b
+setb TR1
+
+ret
+
+random_seed_from_timer:
+mov A,TL1
+jnz random_seed_from_timer_nonzero		; our LSFR won't work if all bits are zero
+mov A,#0FFh
+random_seed_from_timer_nonzero:
+mov RANDOM_NUM,A
+ret
+	\end{lstlisting}
+\end{minipage}
+
+\section{Timer}
+
+Der Timer musste deutlich komplizierter realisiert werden als gedacht. Das Spiel soll eine gewissen Zeit laufen, allerdings lassen die Timer des 8051 nur eine sehr geringe Zeitspanne zu, sodass wir dieses Problem umgehen mussten. Ein Ausschnitt des Timer-Codes ist in Programmcode \ref{code:timer} zu sehen. 
+
+\noindent
+\begin{minipage}[th]{\textwidth}
+	\vspace{1em}
+	\begin{lstlisting}[caption=Quellcode-Ausschnitt für die Timerverwaltung, label=code:timer]
+	timer_init:					; Subroutine to setup the timer
+	mov TL0,TIMER_RELOAD_VAL;	; reset timer counter
+	mov TH0,TIMER_RELOAD_VAL+1;
+	
+	anl TMOD,#11111101b	; intialize timer mode: timer 0 in 16 bit mode
+	orl TMOD,#00000001b
+	setb TR0;
+	setb EA;					; enable timer interrupt
+	setb ET0;
+	ret;
+	
+	timer_int_handler:			; timer interrupt handler
+	mov R7, A 			; save current acc
+	clr IE0			; prevent INT0 from getting triggered with timer ir
+	
+	mov TL0,TIMER_RELOAD_VAL;
+	mov TH0,TIMER_RELOAD_VAL+1;
+	mov A,TIMER_DEC_COUNTER
+	jz timer_lo_zero
+	dec TIMER_DEC_COUNTER
+	jmp timer_hi_zero
+	timer_lo_zero:
+	mov A,TIMER_DEC_COUNTER+1
+	jz timer_hi_zero
+	dec TIMER_DEC_COUNTER+1
+	mov TIMER_DEC_COUNTER,#0FFh
+	timer_hi_zero:
+	inc TIMER_INC_COUNTER
+	
+	mov A, R7			; reset acc to state before interrupt
+	reti
+	\end{lstlisting}
+\end{minipage}
+
+\section{LCD Display}
+
+Das LCD Display ist einer der komplizierteren Komponenten aus dem Gesamtprogramm. Die beiden Macros zum Schreiben eines Strings auf das LCD Display sind in Programmcode \ref{code:lcd} dargestellt. Die Komponente selbst ist allerdings deutlich größer, um auch Routinen für das Schreiben der aktuellen Statistik einfach anzubieten.
+
+\noindent
+\begin{minipage}[th]{\textwidth}
+	\vspace{1em}
+	\begin{lstlisting}[caption=Quellcode-Ausschnitt für das LCD Display, label=code:lcd]
+lcd_sendChar macro char	;call this macro like   LCD_sendChar #'A'
+mov   	LCD_data, char 	;Move the char to LCD port
+setb	LCD_rs			;Selected data register
+clr	LCD_rw				;We are writing
+setb	LCD_en			;Enable H-> L
+clr	LCD_en
+inc	CURSOR_POS			;save new cursor position
+call	LCD_busy		;Wait for LCD to process the data
+endm
+
+lcd_sendString macro string
+local START				;define local macro label
+local EXIT				;define local macro label
+mov   dpl, #low(string)
+mov   dph, #high(string)
+start:					;local labels have to be in lowercase, idk why^^
+clr   a                 ;clear Accumulator for any previous data
+movc  a,@a+dptr         ;load the first character in accumulator
+jz    EXIT              ;go to exit if zero
+LCD_sendChar A			;send actual char
+inc   dptr              ;increment data pointer
+sjmp  START    			;jump back to send the next character
+exit:					;local labels have to be in lowercase, idk
+endm
+
+	\end{lstlisting}
+\end{minipage}
+
+\clearpage
+\section{Hauptroutine}
+
+Die Hauptroutine initialisiert zuerst sämtliche Komponenten. \code{gamestart} schreibt dann den \code{BEGIN} Text auf das Display und wartet auf das Drücken des Buzzers. Sobald dieser gedrückt wird, wird die Bombe einem zufälligen Spieler gegeben und danach der Timer auf einen zufälligen Wert gesetzt.In Programmcode \ref{code:main} ist dieser Ablauf zu sehen.
+
+Programmcode \ref{code:loop} zeigt die Hauptschleife in der das Programm läuft. Dabei wird zuerst überprüft, ob der Counter abgelaufen, das heißt die Bombe bereits explodiert ist. Falls nicht, wird der Buzzer überprüft und die \code{toggleActivePlayer} Routine aufgerufen, sofern dieser gedrückt ist. Im Anschluss wird mit \code{sendActivePlayerNumber} das LCD Display aktualisiert.
+
+\noindent
+\begin{minipage}[th]{\textwidth}
+	\vspace{1em}
+	\begin{lstlisting}[caption=Quellcode-Ausschnitt: Hauptschleife, label=code:loop]
+	throwBomb:
+	; exit game on timeout
+	mov A,TIMER_DEC_COUNTER
+	orl A,TIMER_DEC_COUNTER+1
+	jz game_timeout
+
+	; check for button press
+	mov A,BUZZER
+	cjne A, #1, throwBomb ; not pressed
+
+	; pressed
+	clr BUZZER
+
+	call toggleActivePlayer
+	call sendActivePlayerNumber
+	ljmp throwBomb
+	\end{lstlisting}
+\end{minipage}
+
+\noindent
+\begin{minipage}[th]{\textwidth}
+	\vspace{1em}
+	\begin{lstlisting}[caption=Quellcode-Ausschnitt für die Hauptroutine, label=code:main]
+	gamestart:
+	LCD_setCursor #01h, #00h
+	LCD_sendString BEGIN
+	
+	call waitForBuzzer
+	
+	; set active player based on random number
+	call random_seed_from_timer
+	call random_next
+	mov A,RANDOM_NUM
+	
+	mov ACTIVE_PLAYER, #01h
+	jb A.0,gamestart_afterplayer
+	mov ACTIVE_PLAYER, #02
+	
+	gamestart_afterplayer:
+	;send Active Player to LCD
+	lcd_setCursor #01h, #00h
+	lcd_sendString ACTIVE	
+	call sendActivePlayerNumber
+	call lcd_clearToEndOfLine
+	
+	; setup timer
+	call random_next
+	
+	; In the simulator: 15 ticks max
+	mov A,RANDOM_NUM
+	anl A,#00001111b
+	mov B,#0
+	
+	; In the simulator: 10 extra ticks
+	; no 16bit addition necessary here
+	add A,#10
+	mov R0,A
+	mov A,#0
+	
+	; now write the result to the timer
+	mov TIMER_DEC_COUNTER,R0
+	mov TIMER_DEC_COUNTER+1,A
+	
+	clr BUZZER
+	\end{lstlisting}
+\end{minipage}

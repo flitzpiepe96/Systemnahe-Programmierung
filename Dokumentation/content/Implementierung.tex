@@ -33,7 +33,7 @@ Der Buzzer wurde wie bereits erwähnt mit einer Interrupt Steuerung implementier
 
 \section{Zufallsgenerator}
 
-Der Sprungpunkt \code{random\_init} wird beim Starten des Programms aufgerufen um den Zufallsgenerator zu initialisieren. Für die erste erzeugte Zufallszahl wird der Wert von \code{Timer1} verwendet und mit dem Sprungpunkt \code{random\_next\_from\_timer} angesprochen. Danach wird immer \code{random\_next} verwendet, um eine auf der letzten Zufallszahl basierte neue Zufallszahl zu erhalten.
+Die Funktion \code{random\_init} wird beim Starten des Programms aufgerufen um den Zufallsgenerator zu initialisieren. Für die erste erzeugte Zufallszahl wird der Wert von \code{Timer1} verwendet und mit der Funktion \code{random\_seed\_from\_timer} in die passende Variable geladen. Danach wird immer \code{random\_next} verwendet, um eine auf der letzten Zufallszahl basierte neue Zufallszahl zu erhalten.
 
 \noindent
 \begin{minipage}[t]{\textwidth}
